@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="InterHome.AppHost/InterHome.AppHost.csproj" />
+  <Project Path="InterHome.ServiceDefaults/InterHome.ServiceDefaults.csproj" />
+  <Project Path="InterHome/InterHome.csproj">
+    <Deploy />
+  </Project>
+</Solution>
