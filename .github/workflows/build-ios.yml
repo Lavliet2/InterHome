@@ -50,7 +50,8 @@ jobs:
         
         # Build for real iOS device (not simulator)
         # Use ios-arm64 instead of iossimulator-arm64
-        dotnet build InterHome/InterHome.csproj \
+        # Use publish instead of build to create a complete deployable bundle
+        dotnet publish InterHome/InterHome.csproj \
           -f net10.0-ios \
           -c Release \
           -p:RuntimeIdentifier=ios-arm64 \
@@ -62,6 +63,7 @@ jobs:
           -p:CodesignRequireProvisioningProfile=false \
           -p:_RequireCodeSigning=false \
           -p:MtouchEnableSGenConc=false \
+          -p:_IsPublishing=false \
           -v normal 2>&1 | tee build.log
         BUILD_EXIT_CODE=${PIPESTATUS[0]}
         
