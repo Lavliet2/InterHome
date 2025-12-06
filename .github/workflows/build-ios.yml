@@ -42,18 +42,18 @@ jobs:
       run: dotnet restore InterHome/InterHome.csproj
       working-directory: ${{ github.workspace }}
       
-    - name: Build iOS app for Simulator (no signing required)
-      id: build-simulator
+    - name: Build iOS app for Device (ios-arm64)
+      id: build-device
       run: |
-        echo "Building for iOS Simulator (no code signing needed)..."
+        echo "Building for iOS Device (ios-arm64) - for Sideloadly/iMazing..."
+        echo "Note: This build will be unsigned. Sideloadly/iMazing will sign it during installation."
         
-        # Try build instead of publish for simulator
-        # Disable code signing requirement for simulator
+        # Build for real iOS device (not simulator)
+        # Use ios-arm64 instead of iossimulator-arm64
         dotnet build InterHome/InterHome.csproj \
           -f net10.0-ios \
           -c Release \
-          -p:RuntimeIdentifier=iossimulator-arm64 \
-          -p:MtouchExtraArgs="--dev" \
+          -p:RuntimeIdentifier=ios-arm64 \
           -p:MtouchLink=SdkOnly \
           -p:MtouchUseLlvm=false \
           -p:CodesignKey="" \
@@ -65,21 +65,17 @@ jobs:
           -v normal 2>&1 | tee build.log
         BUILD_EXIT_CODE=${PIPESTATUS[0]}
         
-        # If build succeeds, try to create .app bundle manually
+        # If build succeeds, check for outputs
         if [ "$BUILD_EXIT_CODE" -eq 0 ]; then
           echo "Build succeeded, checking for outputs..."
-          # Look for the built app in obj directory
-          APP_DIR=$(find InterHome/obj -type d -path "*/net10.0-ios/*" -name "*.app" 2>/dev/null | head -1)
+          # Look for the built app in bin/Release directory
+          APP_DIR=$(find InterHome/bin -type d -path "*/net10.0-ios/ios-arm64/*" -name "*.app" 2>/dev/null | head -1)
           if [ -z "$APP_DIR" ]; then
-            echo "No .app found, trying alternative approach..."
-            # Try publish with different parameters
-            dotnet publish InterHome/InterHome.csproj \
-              -f net10.0-ios \
-              -c Release \
-              -p:RuntimeIdentifier=iossimulator-arm64 \
-              -p:_IsPublishing=false \
-              -p:MtouchExtraArgs="--dev" \
-              -v normal 2>&1 | tee publish.log || true
+            echo "No .app found in bin, checking obj..."
+            APP_DIR=$(find InterHome/obj -type d -path "*/net10.0-ios/ios-arm64/*" -name "*.app" 2>/dev/null | head -1)
+          fi
+          if [ -n "$APP_DIR" ]; then
+            echo "Found .app bundle: $APP_DIR"
           fi
         fi
         
