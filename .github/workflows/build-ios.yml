@@ -41,29 +41,29 @@ jobs:
       run: dotnet restore InterHome/InterHome.csproj
       working-directory: ${{ github.workspace }}
       
-    - name: Build iOS app (without signing)
-      run: |
-        dotnet build InterHome/InterHome.csproj \
-          -f net10.0-ios \
-          -c Release \
-          -p:BuildIpa=true \
-          -p:ProvisioningProfile="" \
-          -p:CodesignKey="" \
-          -p:CodesignProvision="" \
-          -p:MtouchExtraArgs="--dev"
-      working-directory: ${{ github.workspace }}
-      continue-on-error: true
-      
-    - name: Build iOS app (IPA file)
+    - name: Build iOS app for Simulator (no signing required)
       run: |
         dotnet publish InterHome/InterHome.csproj \
           -f net10.0-ios \
           -c Release \
-          -p:BuildIpa=true \
+          -p:RuntimeIdentifier=ios-arm64-simulator \
+          -p:BuildIpa=false
+      working-directory: ${{ github.workspace }}
+      continue-on-error: true
+      
+    - name: Build iOS app for Device (requires signing - will fail but may create .app)
+      run: |
+        dotnet publish InterHome/InterHome.csproj \
+          -f net10.0-ios \
+          -c Release \
           -p:RuntimeIdentifier=ios-arm64 \
-          -p:ProvisioningProfile="" \
+          -p:BuildIpa=false \
+          -p:MtouchExtraArgs="--dev" \
+          -p:CodesignProvision="" \
           -p:CodesignKey="" \
-          -p:CodesignProvision=""
+          -p:ProvisioningProfile="" \
+          -p:CodesignRequireProvisioningProfile=false \
+          -p:MtouchUseLlvm=false
       working-directory: ${{ github.workspace }}
       continue-on-error: true
       
