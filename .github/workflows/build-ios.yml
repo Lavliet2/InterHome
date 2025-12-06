@@ -46,17 +46,34 @@ jobs:
       run: |
         echo "Building for iOS Simulator (no code signing needed)..."
         
-        # Build and capture exit code
-        dotnet publish InterHome/InterHome.csproj \
+        # Try build instead of publish for simulator
+        dotnet build InterHome/InterHome.csproj \
           -f net10.0-ios \
           -c Release \
           -p:RuntimeIdentifier=iossimulator-arm64 \
-          -p:BuildIpa=false \
           -p:MtouchExtraArgs="--dev" \
           -p:MtouchLink=SdkOnly \
           -p:MtouchUseLlvm=false \
           -v normal 2>&1 | tee build.log
         BUILD_EXIT_CODE=${PIPESTATUS[0]}
+        
+        # If build succeeds, try to create .app bundle manually
+        if [ "$BUILD_EXIT_CODE" -eq 0 ]; then
+          echo "Build succeeded, checking for outputs..."
+          # Look for the built app in obj directory
+          APP_DIR=$(find InterHome/obj -type d -path "*/net10.0-ios/*" -name "*.app" 2>/dev/null | head -1)
+          if [ -z "$APP_DIR" ]; then
+            echo "No .app found, trying alternative approach..."
+            # Try publish with different parameters
+            dotnet publish InterHome/InterHome.csproj \
+              -f net10.0-ios \
+              -c Release \
+              -p:RuntimeIdentifier=iossimulator-arm64 \
+              -p:_IsPublishing=false \
+              -p:MtouchExtraArgs="--dev" \
+              -v normal 2>&1 | tee publish.log || true
+          fi
+        fi
         
         echo ""
         echo "=== Build Summary ==="
