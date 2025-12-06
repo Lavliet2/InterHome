@@ -149,41 +149,48 @@ jobs:
           echo "ipa_path=$IPA_PATH" >> $GITHUB_OUTPUT
         fi
         
-        # Search for .app bundles in all possible locations
-        echo "Searching in current directory..."
+        # Search for .app bundles, prefer bin/Release directory (final build output)
+        echo "Searching for .app bundles..."
         APP_PATHS=$(find . -name "*.app" -type d 2>/dev/null)
-        
-        if [ -z "$APP_PATHS" ]; then
-          echo "Searching in InterHome/obj..."
-          APP_PATHS=$(find InterHome/obj -name "*.app" -type d 2>/dev/null)
-        fi
-        
-        if [ -z "$APP_PATHS" ]; then
-          echo "Searching in InterHome/bin..."
-          APP_PATHS=$(find InterHome/bin -name "*.app" -type d 2>/dev/null)
-        fi
         
         if [ -n "$APP_PATHS" ]; then
           echo "Found .app bundles:"
-          echo "$APP_PATHS"
-          # Prefer simulator builds (they don't require signing)
-          SIMULATOR_APP=$(echo "$APP_PATHS" | grep -iE "(simulator|sim)" | head -1)
-          if [ -n "$SIMULATOR_APP" ]; then
-            APP_PATH="$SIMULATOR_APP"
-            echo "Using simulator .app bundle: $APP_PATH"
+          echo "$APP_PATHS" | while read app; do
+            SIZE=$(du -sh "$app" 2>/dev/null | cut -f1)
+            echo "  $app ($SIZE)"
+          done
+          
+          # Prefer bin/Release directory (final build output, usually largest)
+          BIN_APP=$(echo "$APP_PATHS" | grep "bin/Release" | head -1)
+          if [ -n "$BIN_APP" ]; then
+            APP_PATH="$BIN_APP"
+            echo "Using bin/Release .app bundle: $APP_PATH"
           else
-            # Use first available .app bundle
-            APP_PATH=$(echo "$APP_PATHS" | head -1)
-            echo "Using .app bundle: $APP_PATH"
+            # Prefer simulator builds
+            SIMULATOR_APP=$(echo "$APP_PATHS" | grep -iE "(simulator|sim|iossimulator)" | head -1)
+            if [ -n "$SIMULATOR_APP" ]; then
+              APP_PATH="$SIMULATOR_APP"
+              echo "Using simulator .app bundle: $APP_PATH"
+            else
+              # Use largest .app bundle
+              APP_PATH=$(echo "$APP_PATHS" | while read app; do
+                SIZE=$(du -sk "$app" 2>/dev/null | cut -f1)
+                echo "$SIZE $app"
+              done | sort -rn | head -1 | cut -d' ' -f2-)
+              echo "Using largest .app bundle: $APP_PATH"
+            fi
           fi
           
           # Verify it's not empty
           if [ -d "$APP_PATH" ]; then
             SIZE=$(du -sk "$APP_PATH" 2>/dev/null | cut -f1)
+            SIZE_MB=$(du -sm "$APP_PATH" 2>/dev/null | cut -f1)
             if [ -n "$SIZE" ] && [ "$SIZE" -gt 0 ]; then
-              echo "Bundle size: ${SIZE}KB"
+              echo "Bundle size: ${SIZE}KB (${SIZE_MB}MB)"
               if [ "$SIZE" -lt 100 ]; then
                 echo "⚠ WARNING: Bundle size is very small ($SIZE KB), may be incomplete"
+              else
+                echo "✓ Bundle size looks good"
               fi
               echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
             else
@@ -194,9 +201,6 @@ jobs:
           echo "No .app bundles found anywhere"
           echo "Listing all build output directories:"
           find InterHome -type d \( -name "bin" -o -name "obj" -o -name "net10.0-ios*" \) 2>/dev/null | head -20
-          echo ""
-          echo "Listing files in obj directories:"
-          find InterHome/obj -type f -name "*.dll" -o -name "*.exe" 2>/dev/null | head -10
         fi
         
         # If nothing found, try to find any iOS build output
