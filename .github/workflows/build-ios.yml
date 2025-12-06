@@ -113,4 +113,3 @@ jobs:
           **/bin/**
           **/obj/**
         retention-days: 7
-
