@@ -31,6 +31,12 @@ jobs:
       with:
         xcode-version: latest-stable
         
+    - name: Install .NET MAUI workloads
+      run: |
+        dotnet workload restore
+        dotnet workload install maui-ios --skip-sign-check
+      working-directory: ${{ github.workspace }}
+        
     - name: Restore dependencies
       run: dotnet restore InterHome/InterHome.csproj
       working-directory: ${{ github.workspace }}
