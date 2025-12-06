@@ -47,6 +47,7 @@ jobs:
         echo "Building for iOS Simulator (no code signing needed)..."
         
         # Try build instead of publish for simulator
+        # Disable code signing requirement for simulator
         dotnet build InterHome/InterHome.csproj \
           -f net10.0-ios \
           -c Release \
@@ -54,6 +55,12 @@ jobs:
           -p:MtouchExtraArgs="--dev" \
           -p:MtouchLink=SdkOnly \
           -p:MtouchUseLlvm=false \
+          -p:CodesignKey="" \
+          -p:CodesignProvision="" \
+          -p:ProvisioningProfile="" \
+          -p:CodesignRequireProvisioningProfile=false \
+          -p:_RequireCodeSigning=false \
+          -p:MtouchEnableSGenConc=false \
           -v normal 2>&1 | tee build.log
         BUILD_EXIT_CODE=${PIPESTATUS[0]}
         
