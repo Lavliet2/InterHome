@@ -45,8 +45,8 @@ jobs:
       id: build-simulator
       run: |
         echo "Building for iOS Simulator (no code signing needed)..."
-        set -e  # Exit on error to see actual failures
         
+        # Build and capture exit code
         dotnet publish InterHome/InterHome.csproj \
           -f net10.0-ios \
           -c Release \
@@ -55,23 +55,38 @@ jobs:
           -p:MtouchExtraArgs="--dev" \
           -p:MtouchLink=SdkOnly \
           -p:MtouchUseLlvm=false \
-          -v detailed 2>&1 | tee build.log || BUILD_FAILED=$?
+          -v normal 2>&1 | tee build.log
+        BUILD_EXIT_CODE=${PIPESTATUS[0]}
         
-        if [ -n "$BUILD_FAILED" ]; then
-          echo "⚠ Build failed with exit code: $BUILD_FAILED"
-          echo "Last 50 lines of build log:"
-          tail -50 build.log || true
+        echo ""
+        echo "=== Build Summary ==="
+        if [ "$BUILD_EXIT_CODE" -eq 0 ]; then
+          echo "✓ Build completed with exit code: $BUILD_EXIT_CODE"
         else
-          echo "✓ Build completed successfully"
+          echo "⚠ Build completed with exit code: $BUILD_EXIT_CODE (may have errors)"
+          echo "Last 100 lines of build log:"
+          tail -100 build.log || true
         fi
         
-        echo "Build completed. Checking output..."
-        echo "Searching for .app bundles..."
-        find . -name "*.app" -type d 2>/dev/null | head -10 || echo "No .app bundles found"
-        echo "Searching in obj directories..."
-        find InterHome/obj -name "*.app" -type d 2>/dev/null | head -10 || echo "No .app in obj"
-        echo "Searching in bin directories..."
-        find InterHome/bin -name "*.app" -type d 2>/dev/null | head -10 || echo "No .app in bin"
+        echo ""
+        echo "=== Searching for build outputs ==="
+        echo "Searching for .app bundles in all locations..."
+        find . -name "*.app" -type d 2>/dev/null | while read app; do
+          echo "Found: $app"
+          du -sh "$app" 2>/dev/null || echo "  (size check failed)"
+        done
+        
+        echo ""
+        echo "Checking obj directories:"
+        find InterHome/obj -type d -name "*simulator*" -o -name "*iossimulator*" 2>/dev/null | head -10
+        
+        echo ""
+        echo "Checking bin directories:"
+        find InterHome/bin -type d -name "*simulator*" -o -name "*iossimulator*" 2>/dev/null | head -10
+        
+        echo ""
+        echo "Listing all publish directories:"
+        find InterHome -type d -path "*/publish/*" -o -path "*/Release/*" 2>/dev/null | grep -i ios | head -10
       working-directory: ${{ github.workspace }}
       continue-on-error: true
       
