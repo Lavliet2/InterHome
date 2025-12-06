@@ -154,32 +154,31 @@ jobs:
             echo "  $app ($SIZE)"
           done
           
-          # Prefer ios-arm64 builds (for real devices) over simulator builds
-          # Exclude codesign subdirectories - they contain incomplete copies
-          DEVICE_APP=$(echo "$APP_PATHS" | grep -E "(ios-arm64|net10.0-ios)" | grep -v simulator | grep -v codesign | head -1)
-          if [ -n "$DEVICE_APP" ]; then
-            APP_PATH="$DEVICE_APP"
-            echo "Using device .app bundle: $APP_PATH"
+          # Prioritize bin/Release directory (final build output)
+          # Exclude intermediate directories: strip, codesign (they contain empty/incomplete copies)
+          BIN_APP=$(echo "$APP_PATHS" | grep "bin/Release" | grep -v "codesign" | grep -v "strip" | head -1)
+          if [ -n "$BIN_APP" ]; then
+            APP_PATH="$BIN_APP"
+            echo "Using bin/Release .app bundle: $APP_PATH"
           else
-            # Fallback to bin/Release directory
-            BIN_APP=$(echo "$APP_PATHS" | grep "bin/Release" | grep -v "codesign" | head -1)
-            if [ -n "$BIN_APP" ]; then
-              APP_PATH="$BIN_APP"
-              echo "Using bin/Release .app bundle: $APP_PATH"
+            # Prefer ios-arm64 builds (for real devices) over simulator builds
+            # But exclude strip and codesign directories
+            DEVICE_APP=$(echo "$APP_PATHS" | grep -E "(ios-arm64|net10.0-ios)" | grep -v simulator | grep -v codesign | grep -v strip | head -1)
+            if [ -n "$DEVICE_APP" ]; then
+              APP_PATH="$DEVICE_APP"
+              echo "Using device .app bundle: $APP_PATH"
             else
-              # Use largest .app bundle (excluding codesign subdirectories)
-              APP_PATH=$(echo "$APP_PATHS" | grep -v "codesign" | while read app; do
+              # Use largest .app bundle (excluding intermediate directories)
+              APP_PATH=$(echo "$APP_PATHS" | grep -v "codesign" | grep -v "strip" | while read app; do
                 SIZE=$(du -sk "$app" 2>/dev/null | cut -f1)
-                if [ -n "$SIZE" ] && [ "$SIZE" -gt 0 ]; then
+                if [ -n "$SIZE" ] && [ "$SIZE" -gt 100 ]; then
                   echo "$SIZE $app"
                 fi
               done | sort -rn | head -1 | cut -d' ' -f2-)
               if [ -n "$APP_PATH" ]; then
                 echo "Using largest .app bundle: $APP_PATH"
               else
-                # Fallback to any bundle
-                APP_PATH=$(echo "$APP_PATHS" | head -1)
-                echo "Using first available .app bundle: $APP_PATH"
+                echo "⚠ WARNING: No valid .app bundle found (all are too small or empty)"
               fi
             fi
           fi
