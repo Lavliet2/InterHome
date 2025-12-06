@@ -49,9 +49,16 @@ jobs:
           -c Release \
           -p:RuntimeIdentifier=ios-arm64-simulator \
           -p:BuildIpa=false \
-          -p:MtouchExtraArgs="--dev"
+          -p:MtouchExtraArgs="--dev" \
+          -p:MtouchLink=SdkOnly \
+          -p:MtouchUseLlvm=false
         echo "Build completed. Checking output..."
-        find . -name "*.app" -type d | head -5
+        echo "Searching for .app bundles..."
+        find . -name "*.app" -type d 2>/dev/null | head -10
+        echo "Searching in obj directories..."
+        find InterHome/obj -name "*.app" -type d 2>/dev/null | head -10
+        echo "Searching in bin directories..."
+        find InterHome/bin -name "*.app" -type d 2>/dev/null | head -10
       working-directory: ${{ github.workspace }}
       continue-on-error: true
       
@@ -90,13 +97,25 @@ jobs:
           echo "ipa_path=$IPA_PATH" >> $GITHUB_OUTPUT
         fi
         
-        # Search for .app bundles, prefer simulator builds
+        # Search for .app bundles in all possible locations
+        echo "Searching in current directory..."
         APP_PATHS=$(find . -name "*.app" -type d 2>/dev/null)
+        
+        if [ -z "$APP_PATHS" ]; then
+          echo "Searching in InterHome/obj..."
+          APP_PATHS=$(find InterHome/obj -name "*.app" -type d 2>/dev/null)
+        fi
+        
+        if [ -z "$APP_PATHS" ]; then
+          echo "Searching in InterHome/bin..."
+          APP_PATHS=$(find InterHome/bin -name "*.app" -type d 2>/dev/null)
+        fi
+        
         if [ -n "$APP_PATHS" ]; then
           echo "Found .app bundles:"
           echo "$APP_PATHS"
           # Prefer simulator builds (they don't require signing)
-          SIMULATOR_APP=$(echo "$APP_PATHS" | grep -i simulator | head -1)
+          SIMULATOR_APP=$(echo "$APP_PATHS" | grep -iE "(simulator|sim)" | head -1)
           if [ -n "$SIMULATOR_APP" ]; then
             APP_PATH="$SIMULATOR_APP"
             echo "Using simulator .app bundle: $APP_PATH"
@@ -108,18 +127,24 @@ jobs:
           
           # Verify it's not empty
           if [ -d "$APP_PATH" ]; then
-            SIZE=$(du -sk "$APP_PATH" | cut -f1)
-            echo "Bundle size: ${SIZE}KB"
-            if [ "$SIZE" -lt 100 ]; then
-              echo "⚠ WARNING: Bundle size is very small ($SIZE KB), may be incomplete"
+            SIZE=$(du -sk "$APP_PATH" 2>/dev/null | cut -f1)
+            if [ -n "$SIZE" ] && [ "$SIZE" -gt 0 ]; then
+              echo "Bundle size: ${SIZE}KB"
+              if [ "$SIZE" -lt 100 ]; then
+                echo "⚠ WARNING: Bundle size is very small ($SIZE KB), may be incomplete"
+              fi
+              echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
+            else
+              echo "⚠ WARNING: Could not determine bundle size"
             fi
-            echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
           fi
         else
-          echo "No .app bundles found"
-          # List build directories for debugging
-          echo "Build directories:"
-          find . -type d -name "bin" -o -name "obj" | head -10
+          echo "No .app bundles found anywhere"
+          echo "Listing all build output directories:"
+          find InterHome -type d \( -name "bin" -o -name "obj" -o -name "net10.0-ios*" \) 2>/dev/null | head -20
+          echo ""
+          echo "Listing files in obj directories:"
+          find InterHome/obj -type f -name "*.dll" -o -name "*.exe" 2>/dev/null | head -10
         fi
         
         # If nothing found, try to find any iOS build output
