@@ -43,27 +43,38 @@ jobs:
       
     - name: Build iOS app for Simulator (no signing required)
       run: |
+        echo "Building for iOS Simulator (no code signing needed)..."
         dotnet publish InterHome/InterHome.csproj \
           -f net10.0-ios \
           -c Release \
           -p:RuntimeIdentifier=ios-arm64-simulator \
-          -p:BuildIpa=false
+          -p:BuildIpa=false \
+          -p:MtouchExtraArgs="--dev"
+        echo "Build completed. Checking output..."
+        find . -name "*.app" -type d | head -5
       working-directory: ${{ github.workspace }}
       continue-on-error: true
       
-    - name: Build iOS app for Device (requires signing - will fail but may create .app)
+    - name: Verify .app bundle contents
+      if: always()
       run: |
-        dotnet publish InterHome/InterHome.csproj \
-          -f net10.0-ios \
-          -c Release \
-          -p:RuntimeIdentifier=ios-arm64 \
-          -p:BuildIpa=false \
-          -p:MtouchExtraArgs="--dev" \
-          -p:CodesignProvision="" \
-          -p:CodesignKey="" \
-          -p:ProvisioningProfile="" \
-          -p:CodesignRequireProvisioningProfile=false \
-          -p:MtouchUseLlvm=false
+        APP_BUNDLE=$(find . -name "*.app" -type d | grep -i simulator | head -1)
+        if [ -n "$APP_BUNDLE" ]; then
+          echo "Found simulator .app bundle: $APP_BUNDLE"
+          echo "Size: $(du -sh "$APP_BUNDLE" | cut -f1)"
+          echo "Contents:"
+          ls -la "$APP_BUNDLE" | head -10
+          if [ -f "$APP_BUNDLE/InterHome" ]; then
+            echo "✓ Executable found!"
+            ls -lh "$APP_BUNDLE/InterHome"
+          else
+            echo "✗ Executable not found"
+          fi
+        else
+          echo "No simulator .app bundle found"
+          echo "Searching all .app bundles:"
+          find . -name "*.app" -type d
+        fi
       working-directory: ${{ github.workspace }}
       continue-on-error: true
       
@@ -79,15 +90,31 @@ jobs:
           echo "ipa_path=$IPA_PATH" >> $GITHUB_OUTPUT
         fi
         
-        # Search for .app bundles in common build locations
+        # Search for .app bundles, prefer simulator builds
         APP_PATHS=$(find . -name "*.app" -type d 2>/dev/null)
         if [ -n "$APP_PATHS" ]; then
           echo "Found .app bundles:"
           echo "$APP_PATHS"
-          # Get the first .app bundle
-          APP_PATH=$(echo "$APP_PATHS" | head -1)
-          echo "Using: $APP_PATH"
-          echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
+          # Prefer simulator builds (they don't require signing)
+          SIMULATOR_APP=$(echo "$APP_PATHS" | grep -i simulator | head -1)
+          if [ -n "$SIMULATOR_APP" ]; then
+            APP_PATH="$SIMULATOR_APP"
+            echo "Using simulator .app bundle: $APP_PATH"
+          else
+            # Use first available .app bundle
+            APP_PATH=$(echo "$APP_PATHS" | head -1)
+            echo "Using .app bundle: $APP_PATH"
+          fi
+          
+          # Verify it's not empty
+          if [ -d "$APP_PATH" ]; then
+            SIZE=$(du -sk "$APP_PATH" | cut -f1)
+            echo "Bundle size: ${SIZE}KB"
+            if [ "$SIZE" -lt 100 ]; then
+              echo "⚠ WARNING: Bundle size is very small ($SIZE KB), may be incomplete"
+            fi
+            echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
+          fi
         else
           echo "No .app bundles found"
           # List build directories for debugging
