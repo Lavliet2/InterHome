@@ -439,3 +439,6 @@ project.xcworkspace/xcuserdata/
 # MAUI build artifacts
 *.maui.csproj.user
 *.maui.csproj.bak
+
+
+/ios-app-bundle*
