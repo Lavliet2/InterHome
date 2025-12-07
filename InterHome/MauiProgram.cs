@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using Syncfusion.Maui.Toolkit.Hosting;
 
@@ -13,23 +13,6 @@ public static class MauiProgram
 			.UseMauiApp<App>()
 			.UseMauiCommunityToolkit()
 			.ConfigureSyncfusionToolkit()
-			.ConfigureMauiHandlers(handlers =>
-			{
-#if WINDOWS
-				Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler.Mapper.AppendToMapping("KeyboardAccessibleCollectionView", (handler, view) =>
-				{
-					handler.PlatformView.SingleSelectionFollowsFocus = false;
-				});
-
-				Microsoft.Maui.Handlers.ContentViewHandler.Mapper.AppendToMapping(nameof(Pages.Controls.CategoryChart), (handler, view) =>
-				{
-					if (view is Pages.Controls.CategoryChart && handler.PlatformView is Microsoft.Maui.Platform.ContentPanel contentPanel)
-					{
-						contentPanel.IsTabStop = true;
-					}
-				});
-#endif
-			})
 			.ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -43,18 +26,9 @@ public static class MauiProgram
 		builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
 
-		builder.Services.AddSingleton<ProjectRepository>();
-		builder.Services.AddSingleton<TaskRepository>();
-		builder.Services.AddSingleton<CategoryRepository>();
-		builder.Services.AddSingleton<TagRepository>();
-		builder.Services.AddSingleton<SeedDataService>();
 		builder.Services.AddSingleton<ModalErrorHandler>();
-		builder.Services.AddSingleton<MainPageModel>();
-		builder.Services.AddSingleton<ProjectListPageModel>();
-		builder.Services.AddSingleton<ManageMetaPageModel>();
-
-		builder.Services.AddTransientWithShellRoute<ProjectDetailPage, ProjectDetailPageModel>("project");
-		builder.Services.AddTransientWithShellRoute<TaskDetailPage, TaskDetailPageModel>("task");
+		builder.Services.AddSingleton<PageModels.WelcomePageModel>();
+		builder.Services.AddTransientWithShellRoute<Pages.WelcomePage, PageModels.WelcomePageModel>("welcome");
 		
 		return builder.Build();
 	}
