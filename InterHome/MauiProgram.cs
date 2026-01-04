@@ -12,6 +12,7 @@ public static class MauiProgram
 		builder
 			.UseMauiApp<App>()
 			.UseMauiCommunityToolkit()
+			.UseMauiCommunityToolkitMediaElement()
 			.ConfigureSyncfusionToolkit()
 			.ConfigureFonts(fonts =>
 			{
@@ -28,6 +29,9 @@ public static class MauiProgram
 
 		builder.Services.AddSingleton<PageModels.WelcomePageModel>();
 		builder.Services.AddTransientWithShellRoute<Pages.WelcomePage, PageModels.WelcomePageModel>("welcome");
+		
+		builder.Services.AddSingleton<PageModels.MusicPlayerPageModel>();
+		builder.Services.AddTransientWithShellRoute<Pages.MusicPlayerPage, PageModels.MusicPlayerPageModel>("music");
 		
 		return builder.Build();
 	}
