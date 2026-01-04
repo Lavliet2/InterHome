@@ -8,56 +8,31 @@
              BackgroundColor="{AppThemeBinding Light=White, Dark=#1C1C1E}">
 
     <ScrollView>
-        <Grid Padding="20" RowSpacing="30">
+        <Grid Padding="20">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Заголовок -->
-            <Label Grid.Row="0" 
-                   Text="{Binding WelcomeMessage}" 
-                   FontSize="32" 
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center"
-                   HorizontalTextAlignment="Center"
-                   Margin="0,60,0,20"
-                   TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
+            <!-- Приветствие -->
+            <VerticalStackLayout Grid.Row="0" 
+                                 VerticalOptions="Center"
+                                 Spacing="20"
+                                 Padding="0,40,0,40">
+                <Label Text="{Binding WelcomeMessage}" 
+                       FontSize="32" 
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
 
-            <!-- Описание -->
-            <Label Grid.Row="1" 
-                   Text="{Binding Description}" 
-                   FontSize="18"
-                   HorizontalOptions="Center"
-                   HorizontalTextAlignment="Center"
-                   Margin="0,0,0,20"
-                   TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}" />
-
-            <!-- Информационная карточка -->
-            <Frame Grid.Row="2" 
-                   Padding="25"
-                   CornerRadius="15"
-                   BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2E}"
-                   BorderColor="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3C}"
-                   Margin="0,20,0,0">
-                <VerticalStackLayout Spacing="15">
-                    <Label Text="О приложении" 
-                           FontSize="22" 
-                           FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
-                    
-                    <Label Text="InterHome - это современное приложение для управления вашим домом и сетью. Здесь вы найдете все необходимые инструменты для комфортной работы." 
-                           FontSize="16"
-                           LineBreakMode="WordWrap"
-                           TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}" />
-                </VerticalStackLayout>
-            </Frame>
-
-            <!-- Дополнительное пространство -->
-            <BoxView Grid.Row="3" 
-                     Color="Transparent" />
+                <Label Text="{Binding Description}" 
+                       FontSize="18"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       LineBreakMode="WordWrap"
+                       TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}" />
+            </VerticalStackLayout>
         </Grid>
     </ScrollView>
 </ContentPage>

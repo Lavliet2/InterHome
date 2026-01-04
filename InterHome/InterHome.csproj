@@ -73,6 +73,18 @@
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
 		<BundleResource Include="Platforms\iOS\Entitlements.plist" />
+		<Compile Remove="Platforms\Android\**" />
+		<Compile Remove="Platforms\Windows\**" />
+	</ItemGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+		<Compile Remove="Platforms\iOS\**" />
+		<Compile Remove="Platforms\Windows\**" />
+	</ItemGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.19041.0'">
+		<Compile Remove="Platforms\Android\**" />
+		<Compile Remove="Platforms\iOS\**" />
 	</ItemGroup>
 	
 </Project>

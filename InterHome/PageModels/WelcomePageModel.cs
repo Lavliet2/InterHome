@@ -8,5 +8,5 @@ public partial class WelcomePageModel : ObservableObject
 	private string welcomeMessage = "Добро пожаловать в InterHome!";
 
 	[ObservableProperty]
-	private string description = "Ваше приложение для управления домом и сетью";
+	private string description = "Ваше приложение для управления домом";
 }

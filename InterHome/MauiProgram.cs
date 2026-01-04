@@ -26,7 +26,6 @@ public static class MauiProgram
 		builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
 
-		builder.Services.AddSingleton<ModalErrorHandler>();
 		builder.Services.AddSingleton<PageModels.WelcomePageModel>();
 		builder.Services.AddTransientWithShellRoute<Pages.WelcomePage, PageModels.WelcomePageModel>("welcome");
 		
